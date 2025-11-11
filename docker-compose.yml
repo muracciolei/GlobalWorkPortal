@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: globalwork-db
+    environment:
+      POSTGRES_USER: globalwork
+      POSTGRES_PASSWORD: globalwork123
+      POSTGRES_DB: globalwork_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - globalwork-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: globalwork-api
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://globalwork:globalwork123@db:5432/globalwork_db
+      JWT_SECRET: your-super-secret-jwt-key
+      API_PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+    networks:
+      - globalwork-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: globalwork-web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - globalwork-network
+
+volumes:
+  postgres_data:
+
+networks:
+  globalwork-network:
+    driver: bridge
